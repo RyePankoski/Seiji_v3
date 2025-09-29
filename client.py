@@ -13,11 +13,31 @@ class Client:
         self.board = Board(self.screen, self.board_rect)
         self.trays = []
         self.init_trays()
+        self.selected_piece_from_tray = None
+
+        self.player = 1
 
     def run(self, mouse_pos):
+
         if mouse_pos is not None:
-            print(f"Clicked on board at {self.check_for_click_on_board(mouse_pos)}")
-            print(f"Clicked on tray at {self.check_for_click_on_tray(mouse_pos)}")
+            board_cell = self.check_for_click_on_board(mouse_pos)
+            if board_cell is not None:
+                cell_x, cell_y = board_cell
+                if self.selected_piece_from_tray is not None:
+                    cell_key = (cell_x, cell_y)
+                    if cell_key not in self.board.pieces or self.board.pieces[cell_key] is None:
+                        self.board.pieces[cell_key] = (self.selected_piece_from_tray[0], self.selected_piece_from_tray[1])
+                        piece, player = self.selected_piece_from_tray
+                        for tray in self.trays:
+                            if tray.player == player:
+                                tray.pieces.remove(piece)
+
+                        self.selected_piece_from_tray = None
+
+            result = self.check_for_click_on_tray(mouse_pos)
+            if result is not None:
+                piece, player = result
+                self.selected_piece_from_tray = piece, player
 
         self.render_calls()
 
@@ -26,11 +46,9 @@ class Client:
 
     def check_for_click_on_tray(self, mouse_pos):
         for tray in self.trays:
-            slot = tray.get_clicked_slot(*mouse_pos)
-            if slot:
-                tray.selected_slot = slot
-                return slot
-            tray.selected_slot = None
+            result = tray.get_clicked_slot(*mouse_pos)
+            if result is not None:
+                return result
         return None
 
     def init_trays(self):
@@ -38,7 +56,8 @@ class Client:
             self.board_rect.right + 20,  # x position (20 pixels right of board)
             self.board_rect.top,  # y position (aligned with top of board)
             600,
-            400
+            400,
+            1
         )
 
         player_2_tray = Tray(
@@ -46,6 +65,7 @@ class Client:
             self.board_rect.bottom - 400,
             600,
             400,
+            2
         )
 
         self.trays.append(player_1_tray)
