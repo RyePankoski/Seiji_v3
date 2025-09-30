@@ -2,6 +2,8 @@ import pygame.display
 from constants import *
 from board import Board
 from tray import Tray
+from sound_manager import SoundManager
+from piece import Piece
 
 
 class Client:
@@ -9,52 +11,114 @@ class Client:
         self.screen = screen
         self.width, self.height = pygame.display.get_desktop_sizes()[0]
         self.board_rect = pygame.Rect(0, 0, LINE_LENGTH, LINE_LENGTH)
-        self.board_rect.center = (int(self.width / 2), int(self.height / 2))
         self.board = Board(self.screen, self.board_rect)
         self.trays = []
         self.init_trays()
         self.selected_piece_from_tray = None
-
-        self.player = 1
+        self.selected_piece_on_board = None
 
     def run(self, mouse_pos):
-
         if mouse_pos is not None:
-            board_cell = self.check_for_click_on_board(mouse_pos)
-            if board_cell is not None:
-                cell_x, cell_y = board_cell
-                if self.selected_piece_from_tray is not None:
-                    cell_key = (cell_x, cell_y)
-                    if cell_key not in self.board.pieces or self.board.pieces[cell_key] is None:
-                        self.board.pieces[cell_key] = (self.selected_piece_from_tray[0], self.selected_piece_from_tray[1])
-                        piece, player = self.selected_piece_from_tray
-                        for tray in self.trays:
-                            if tray.player == player:
-                                tray.pieces.remove(piece)
-
-                        self.selected_piece_from_tray = None
-
-            result = self.check_for_click_on_tray(mouse_pos)
-            if result is not None:
-                piece, player = result
-                self.selected_piece_from_tray = piece, player
+            self.handle_board_click(mouse_pos)
+            self.handle_tray_click(mouse_pos)
+            self.board.check_for_promotions()
 
         self.render_calls()
 
-    def check_for_click_on_board(self, mouse_pos):
-        return self.board.get_clicked_slot(*mouse_pos)
-
-    def check_for_click_on_tray(self, mouse_pos):
+    def handle_tray_click(self, mouse_pos):
         for tray in self.trays:
             result = tray.get_clicked_slot(*mouse_pos)
             if result is not None:
-                return result
-        return None
+                piece, player = result
+                self.selected_piece_from_tray = piece, player
+                SoundManager.play_sound("pick_up")
+                return
+
+        self.selected_piece_from_tray = None
+
+    def handle_board_click(self, mouse_pos):
+        board_cell = self.board.get_clicked_slot(*mouse_pos)
+
+        if board_cell is None:
+            if self.selected_piece_on_board is not None:
+                SoundManager.play_sound("de_select")
+            self.selected_piece_on_board = None
+            self.board.selected_piece_on_board = None
+            return
+
+        cell_x, cell_y = board_cell
+
+        # If we have a piece selected and click on a new square, move it there.
+        if self.selected_piece_on_board is not None:
+
+            piece = self.selected_piece_on_board
+            valid_moves = self.board.get_valid_moves(piece)
+
+            if (cell_x, cell_y) == (piece.cx, piece.cy):
+                SoundManager.play_sound("de_select")
+                self.selected_piece_on_board = None
+                self.board.selected_piece_on_board = None
+                return
+
+
+            if (cell_x, cell_y) not in valid_moves:
+                SoundManager.play_sound("error")
+                self.selected_piece_on_board = None
+                self.board.selected_piece_on_board = None
+                return
+
+
+            prev_cell_x, prev_cell_y = piece.cx, piece.cy
+
+            # See if we are trying to move a piece to an occupied slot.
+            if (cell_x, cell_y) in self.board.pieces and self.board.pieces[(cell_x, cell_y)] is not None:
+                other_piece = self.board.pieces[(cell_x, cell_y)]
+
+                if piece.player == other_piece.player:
+                    return
+                else:
+                    SoundManager.play_sound("capture")
+
+            # Update piece position
+            piece.cx = cell_x
+            piece.cy = cell_y
+
+            del self.board.pieces[(prev_cell_x, prev_cell_y)]
+            self.board.pieces[(cell_x, cell_y)] = piece
+            SoundManager.play_sound("slide")
+            self.selected_piece_on_board = None
+            self.board.selected_piece_on_board = None
+            return
+
+        # Check to see if we are clicking on a piece on the board
+        if (cell_x, cell_y) in self.board.pieces and self.board.pieces[(cell_x, cell_y)] is not None:
+            piece = self.board.pieces[(cell_x, cell_y)]
+            self.selected_piece_on_board = piece
+            self.board.selected_piece_on_board = piece
+            SoundManager.play_sound("select_piece")
+            return
+
+        # Early return if we have no tray piece selected
+        if self.selected_piece_from_tray is None:
+            return
+
+        # If we have a tray piece selected, try to place it where there is nothing on the board.
+        if (cell_x, cell_y) not in self.board.pieces or self.board.pieces.get((cell_x, cell_y)) is None:
+            piece_type, player = self.selected_piece_from_tray
+            self.board.pieces[(cell_x, cell_y)] = Piece(cell_x, cell_y, piece_type, player)
+
+            # Update the trays to reflect the change
+            for tray in self.trays:
+                if tray.player == player:
+                    tray.pieces.remove(piece_type)
+
+            self.selected_piece_from_tray = None
+            SoundManager.play_sound("place")
 
     def init_trays(self):
         player_1_tray = Tray(
-            self.board_rect.right + 20,  # x position (20 pixels right of board)
-            self.board_rect.top,  # y position (aligned with top of board)
+            self.board_rect.right + 20,
+            self.board_rect.top,
             600,
             400,
             1
@@ -75,6 +139,3 @@ class Client:
         self.board.draw()
         for tray in self.trays:
             tray.draw(self.screen)
-
-
-

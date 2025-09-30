@@ -3,6 +3,7 @@ import pstats
 import pygame
 import sys
 from game_manager import GameManager
+from sound_manager import SoundManager
 
 
 pygame.init()
@@ -20,6 +21,9 @@ def main():
         for event in events:
             if event.type == pygame.QUIT:
                 return False
+
+
+        SoundManager.game_music()
         game_manager.run(events)
         pygame.display.flip()
 
