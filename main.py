@@ -22,11 +22,9 @@ def main():
             if event.type == pygame.QUIT:
                 return False
 
-
         SoundManager.game_music()
         game_manager.run(events)
         pygame.display.flip()
-
 
     pygame.quit()
     sys.exit()

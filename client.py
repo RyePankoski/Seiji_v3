@@ -4,6 +4,7 @@ from board import Board
 from tray import Tray
 from sound_manager import SoundManager
 from piece import Piece
+from background import Background
 
 
 class Client:
@@ -16,6 +17,8 @@ class Client:
         self.init_trays()
         self.selected_piece_from_tray = None
         self.selected_piece_on_board = None
+        self.placed_monarch = False
+        self.back_ground = Background(self.screen)
 
     def run(self, mouse_pos):
         if mouse_pos is not None:
@@ -23,6 +26,7 @@ class Client:
             self.handle_tray_click(mouse_pos)
             self.board.check_for_promotions()
 
+        self.back_ground.run()
         self.render_calls()
 
     def handle_tray_click(self, mouse_pos):
@@ -109,8 +113,19 @@ class Client:
             piece_type, player = self.selected_piece_from_tray
             valid_placement_squares = self.board.get_valid_placement_squares(player)
 
-            if (cell_x, cell_y) in valid_placement_squares or piece_type == "monarch":
+            # Ensure that the first piece placed is the monarch
+            if not self.placed_monarch and piece_type != "monarch":
+                SoundManager.play_sound("error")
+                self.selected_piece_from_tray = None
+                return
+
+
+
+            if (cell_x, cell_y) in valid_placement_squares or piece_type == "monarch" or piece_type == "spy":
                 self.board.pieces[(cell_x, cell_y)] = Piece(cell_x, cell_y, piece_type, player)
+
+                if piece_type == "monarch":
+                    self.placed_monarch = True
 
                 # Update the trays to reflect the change
                 for tray in self.trays:
