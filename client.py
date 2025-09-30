@@ -31,10 +31,12 @@ class Client:
             if result is not None:
                 piece, player = result
                 self.selected_piece_from_tray = piece, player
+                self.board.selected_tray_piece_player = player
                 SoundManager.play_sound("pick_up")
                 return
 
         self.selected_piece_from_tray = None
+        self.board.selected_tray_piece_player = None
 
     def handle_board_click(self, mouse_pos):
         board_cell = self.board.get_clicked_slot(*mouse_pos)
@@ -60,13 +62,11 @@ class Client:
                 self.board.selected_piece_on_board = None
                 return
 
-
             if (cell_x, cell_y) not in valid_moves:
                 SoundManager.play_sound("error")
                 self.selected_piece_on_board = None
                 self.board.selected_piece_on_board = None
                 return
-
 
             prev_cell_x, prev_cell_y = piece.cx, piece.cy
 
@@ -75,6 +75,8 @@ class Client:
                 other_piece = self.board.pieces[(cell_x, cell_y)]
 
                 if piece.player == other_piece.player:
+                    return
+                elif piece.piece_type == "advisor" and not piece.is_promoted:
                     return
                 else:
                     SoundManager.play_sound("capture")
@@ -105,15 +107,20 @@ class Client:
         # If we have a tray piece selected, try to place it where there is nothing on the board.
         if (cell_x, cell_y) not in self.board.pieces or self.board.pieces.get((cell_x, cell_y)) is None:
             piece_type, player = self.selected_piece_from_tray
-            self.board.pieces[(cell_x, cell_y)] = Piece(cell_x, cell_y, piece_type, player)
+            valid_placement_squares = self.board.get_valid_placement_squares(player)
 
-            # Update the trays to reflect the change
-            for tray in self.trays:
-                if tray.player == player:
-                    tray.pieces.remove(piece_type)
+            if (cell_x, cell_y) in valid_placement_squares or piece_type == "monarch":
+                self.board.pieces[(cell_x, cell_y)] = Piece(cell_x, cell_y, piece_type, player)
 
-            self.selected_piece_from_tray = None
-            SoundManager.play_sound("place")
+                # Update the trays to reflect the change
+                for tray in self.trays:
+                    if tray.player == player:
+                        tray.pieces.remove(piece_type)
+
+                self.selected_piece_from_tray = None
+                SoundManager.play_sound("place")
+            else:
+                SoundManager.play_sound("error")
 
     def init_trays(self):
         player_1_tray = Tray(

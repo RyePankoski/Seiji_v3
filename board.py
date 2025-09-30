@@ -21,7 +21,8 @@ class Board:
         self.init_textures()
 
         self.selected_piece_on_board = None
-        self.selected_tray_piece = None
+        self.selected_tray_piece_player = None
+        self.was_a_piece_promoted = False
 
     def draw(self):
         padding = 10
@@ -55,6 +56,22 @@ class Board:
                     pygame.draw.circle(self.screen, RED, (center_x, center_y), piece_size / 2, 2)
 
         # Draw valid moves for selected piece
+        if self.selected_tray_piece_player is not None:
+            valid_placement_squares = self.get_valid_placement_squares(self.selected_tray_piece_player)
+
+            if len(valid_placement_squares) > 0:
+                for cell_x, cell_y in valid_placement_squares:
+                    center_x = self.board_x + int(cell_x * self.cell_size + self.cell_size / 2)
+                    center_y = self.board_y + int(cell_y * self.cell_size + self.cell_size / 2)
+
+                    # Draw a semi-transparent circle for valid placement
+                    surface = pygame.Surface((self.cell_size, self.cell_size), pygame.SRCALPHA)
+                    pygame.draw.circle(surface, (100, 100, 200, 100),
+                                       (int(self.cell_size / 2), int(self.cell_size / 2)),
+                                       int(self.cell_size * 0.3))
+                    self.screen.blit(surface, (center_x - self.cell_size / 2, center_y - self.cell_size / 2))
+
+
         if self.selected_piece_on_board is not None:
             piece = self.selected_piece_on_board
             valid_moves = self.get_valid_moves(piece)
@@ -122,11 +139,14 @@ class Board:
         return col, row
 
     def check_for_promotions(self):
+        self.was_a_piece_promoted = False
         for piece in self.pieces.values():
             adjacent_pieces = self.get_adjacent_pieces(piece)
+
             if len(adjacent_pieces) <= 0:
                 piece.is_promoted = False
                 piece.promoted_by = False
+                self.was_a_piece_promoted = False
                 continue
 
             for other_piece in adjacent_pieces:
@@ -139,7 +159,34 @@ class Board:
                     if not piece.is_promoted:
                         piece.is_promoted = True
                         piece.promoted_by = "monarch"
-                        SoundManager.play_sound("promote")
+                        self.was_a_piece_promoted = True
+                elif piece.piece_type == "soldier" and other_piece.piece_type == "advisor":
+                    if not piece.is_promoted:
+                        piece.is_promoted = True
+                        piece.promoted_by = "advisor"
+                        self.was_a_piece_promoted = True
+                elif piece.piece_type == "advisor" and other_piece.piece_type == "monarch":
+                    if not piece.is_promoted:
+                        piece.is_promoted = True
+                        piece.promoted_by = "monarch"
+                        self.was_a_piece_promoted = True
+                elif piece.piece_type == "monarch" and other_piece is not None:
+                    if not piece.is_promoted:
+                        piece.is_promoted = True
+                        piece.promoted_by = None
+                        self.was_a_piece_promoted = True
+
+
+        if self.was_a_piece_promoted:
+            SoundManager.play_sound("promote")
+
+    def get_valid_placement_squares(self, player):
+        valid_placement_squares = []
+        for piece in self.pieces.values():
+            if piece.player == player:
+                valid_placement_squares.extend(self.get_valid_moves(piece))
+
+        return valid_placement_squares
 
     def get_adjacent_pieces(self, piece):
         adjacent_pieces = []
