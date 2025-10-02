@@ -1,10 +1,11 @@
 import pygame.display
-from constants import *
-from board import Board
-from tray import Tray
-from sound_manager import SoundManager
-from piece import Piece
-from background import Background
+from Util.constants import *
+from Game.board import Board
+from Game.tray import Tray
+from Render.sound_manager import SoundManager
+from Game.piece import Piece
+from Render.background import Background
+from Util.util import *
 
 
 class Client:
@@ -75,7 +76,7 @@ class Client:
             prev_cell_x, prev_cell_y = piece.cx, piece.cy
 
             # See if we are trying to move a piece to an occupied slot.
-            if (cell_x, cell_y) in self.board.pieces and self.board.pieces[(cell_x, cell_y)] is not None:
+            if has_val_at_key(self.board.pieces, (cell_x, cell_y)):
                 other_piece = self.board.pieces[(cell_x, cell_y)]
 
                 if piece.player == other_piece.player:
@@ -84,6 +85,9 @@ class Client:
                     return
                 else:
                     SoundManager.play_sound("capture")
+                    for tray in self.trays:
+                        if tray.player == piece.player:
+                            tray.pieces.append(other_piece.piece_type)
 
             # Update piece position
             piece.cx = cell_x
@@ -97,7 +101,7 @@ class Client:
             return
 
         # Check to see if we are clicking on a piece on the board
-        if (cell_x, cell_y) in self.board.pieces and self.board.pieces[(cell_x, cell_y)] is not None:
+        if has_val_at_key(self.board.pieces, (cell_x, cell_y)):
             piece = self.board.pieces[(cell_x, cell_y)]
             self.selected_piece_on_board = piece
             self.board.selected_piece_on_board = piece
@@ -109,7 +113,7 @@ class Client:
             return
 
         # If we have a tray piece selected, try to place it where there is nothing on the board.
-        if (cell_x, cell_y) not in self.board.pieces or self.board.pieces.get((cell_x, cell_y)) is None:
+        if not has_val_at_key(self.board.pieces, (cell_x, cell_y)):
             piece_type, player = self.selected_piece_from_tray
             valid_placement_squares = self.board.get_valid_placement_squares(player)
 
@@ -118,8 +122,6 @@ class Client:
                 SoundManager.play_sound("error")
                 self.selected_piece_from_tray = None
                 return
-
-
 
             if (cell_x, cell_y) in valid_placement_squares or piece_type == "monarch" or piece_type == "spy":
                 self.board.pieces[(cell_x, cell_y)] = Piece(cell_x, cell_y, piece_type, player)

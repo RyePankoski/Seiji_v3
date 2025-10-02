@@ -1,23 +1,23 @@
+from Render.sound_manager import SoundManager
+from Top.game_manager import GameManager
 import cProfile
-import pstats
 import pygame
+import pstats
 import sys
-from game_manager import GameManager
-from sound_manager import SoundManager
-
 
 pygame.init()
 screen = pygame.display.set_mode(pygame.display.get_desktop_sizes()[0])
+game_manager = GameManager(screen)
 clock = pygame.time.Clock()
 FPS = 30
-game_manager = GameManager(screen)
+
 
 def main():
     running = True
     while running:
         screen.fill((0, 0, 0))
-        dt = clock.tick(FPS) / 1000
         events = pygame.event.get()
+        clock.tick(FPS) / 1000
         for event in events:
             if event.type == pygame.QUIT:
                 return False
@@ -28,6 +28,7 @@ def main():
 
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     pr = cProfile.Profile()

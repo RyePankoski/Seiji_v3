@@ -17,27 +17,27 @@ class SoundManager:
     def __init__(self):
         if not SoundManager._initialized:
             self.sounds = {
-                'place': pygame.mixer.Sound("Sounds/place_sound.mp3"),
-                'slide': pygame.mixer.Sound("Sounds/slide_sound.mp3"),
-                'pick_up': pygame.mixer.Sound("Sounds/pick_up.mp3"),
-                'capture': pygame.mixer.Sound("Sounds/capture.mp3"),
-                'promote': pygame.mixer.Sound("Sounds/promote.mp3"),
-                'endgame': pygame.mixer.Sound("Sounds/endgame.mp3"),
-                'select_piece': pygame.mixer.Sound("Sounds/advisor.mp3"),
-                'de_select': pygame.mixer.Sound("Sounds/de-select.mp3"),
-                'enemy_select': pygame.mixer.Sound("Sounds/enemy_select.mp3"),
-                'rematch': pygame.mixer.Sound("Sounds/rematch.mp3"),
-                'to_menu': pygame.mixer.Sound("Sounds/to_menu.mp3"),
-                'error': pygame.mixer.Sound("Sounds/error.mp3"),
-                'how_to_play': pygame.mixer.Sound("Sounds/settings.mp3"),
-                'play': pygame.mixer.Sound("Sounds/play.mp3"),
-                'join_game': pygame.mixer.Sound("Sounds/join_game.mp3"),
-                'host_game': pygame.mixer.Sound("Sounds/host_game.mp3")
+                'place': pygame.mixer.Sound("./Sounds/place_sound.mp3"),
+                'slide': pygame.mixer.Sound("./Sounds/slide_sound.mp3"),
+                'pick_up': pygame.mixer.Sound("./Sounds/pick_up.mp3"),
+                'capture': pygame.mixer.Sound("./Sounds/capture.mp3"),
+                'promote': pygame.mixer.Sound("./Sounds/promote.mp3"),
+                'endgame': pygame.mixer.Sound("./Sounds/endgame.mp3"),
+                'select_piece': pygame.mixer.Sound("./Sounds/advisor.mp3"),
+                'de_select': pygame.mixer.Sound("./Sounds/de-select.mp3"),
+                'enemy_select': pygame.mixer.Sound("./Sounds/enemy_select.mp3"),
+                'rematch': pygame.mixer.Sound("./Sounds/rematch.mp3"),
+                'to_menu': pygame.mixer.Sound("./Sounds/to_menu.mp3"),
+                'error': pygame.mixer.Sound("./Sounds/error.mp3"),
+                'how_to_play': pygame.mixer.Sound("./Sounds/settings.mp3"),
+                'play': pygame.mixer.Sound("./Sounds/play.mp3"),
+                'join_game': pygame.mixer.Sound("./Sounds/join_game.mp3"),
+                'host_game': pygame.mixer.Sound("./Sounds/host_game.mp3")
             }
 
             self.songs = {
-                "main_ambient": pygame.mixer.Sound("Sounds/ambient_track.mp3"),
-                "alternate_ambience": pygame.mixer.Sound("Sounds/random_ambient.mp3"),
+                "main_ambient": pygame.mixer.Sound("./Sounds/ambient_track.mp3"),
+                "alternate_ambience": pygame.mixer.Sound("./Sounds/random_ambient.mp3"),
             }
 
             self.current_music = None
